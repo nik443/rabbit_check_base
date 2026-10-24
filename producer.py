@@ -1,22 +1,18 @@
-from pika import ConnectionParameters, BlockingConnection
+import asyncio
+from faststream.rabbit import RabbitBroker, RabbitQueue
 
-connection_params = ConnectionParameters(
-    host="localhost",
-    port=5672,
-)
+broker = RabbitBroker("amqp://guest:guest@localhost:5672/")
+queue = RabbitQueue("messages", durable=False)
 
 
-def main():
-    with BlockingConnection(connection_params) as conn:
-        with conn.channel() as channel:
-            channel.queue_declare(queue="messages")
-            channel.basic_publish(
-                exchange="",
-                routing_key="messages",
-                body="Hello RabbinMQ!",
-            )
-            print("Message sent")
+async def main():
+    async with broker:
+        await broker.publish(
+            message="Hello RabbitMQ!",
+            queue=queue,
+        )
+        print("Message sent")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

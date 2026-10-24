@@ -1,31 +1,21 @@
-from pika import ConnectionParameters, BlockingConnection
+import asyncio
 
-connection_params = ConnectionParameters(
-    host="localhost",
-    port=5672,
-)
+from producer import broker, queue
 
-
-def process_message(channel, method, properties, body):
-    print(f"Message received: {body.decode('utf-8')}")
+@broker.subscriber(queue)
+async def process_message(body: str):
+    print(f"Message received: {body}")
     try:
-        1/0
+        1 / 0
     except ZeroDivisionError:
         pass
-    channel.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def main():
-    with BlockingConnection(connection_params) as conn:
-        with conn.channel() as channel:
-            channel.queue_declare(queue="messages")
-            channel.basic_consume(
-                queue="messages",
-                on_message_callback=process_message,
-            )
-            print("Message wait")
-            channel.start_consuming()
+async def main():
+    async with broker:
+        print("Message wait")
+        await broker.start()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
