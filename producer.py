@@ -19,16 +19,38 @@ work_queue = RabbitQueue(
         }
     ),
 )
-retry_queue = RabbitQueue(
-    name="retry_queue",
+retry_queue_1 = RabbitQueue(
+    name="retry_queue_1",
     durable=False,
     arguments=ClassicQueueArgs(
         **{
             "x-dead-letter-exchange": "payments.work",
             "x-dead-letter-routing-key": "work-letter",
-            "x-message-ttl": 50000,
+            "x-message-ttl": 5000,
         }
     ),
+)
+retry_queue_2 = RabbitQueue(
+    name="retry_queue_2",
+    durable=False,
+    arguments=ClassicQueueArgs(
+        **{
+            "x-dead-letter-exchange": "payments.work",
+            "x-dead-letter-routing-key": "work-letter",
+            "x-message-ttl": 10000,
+        }
+    )
+)
+retry_queue_3 = RabbitQueue(
+    name="retry_queue_3",
+    durable=False,
+    arguments=ClassicQueueArgs(
+        **{
+            "x-dead-letter-exchange": "payments.work",
+            "x-dead-letter-routing-key": "work-letter",
+            "x-message-ttl": 20000,
+        }
+    )
 )
 dead_letter_queue = RabbitQueue(
     name="dead_letter_queue",
@@ -52,7 +74,9 @@ async def declare_exchanges_and_queues(broker_connection):
     await broker_connection.declare_exchange(work_exchange)
     await broker_connection.declare_queue(work_queue)
 
-    await broker_connection.declare_queue(retry_queue)
+    await broker_connection.declare_queue(retry_queue_1)
+    await broker_connection.declare_queue(retry_queue_2)
+    await broker_connection.declare_queue(retry_queue_3)
 
     await broker_connection.declare_exchange(dlx_exchange)
     await broker_connection.declare_queue(dead_letter_queue)

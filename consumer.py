@@ -2,21 +2,22 @@ import asyncio
 
 from faststream.rabbit import RabbitMessage
 
-from producer import broker, work_queue, work_exchange, retry_queue, dlx_exchange, dead_letter_queue
+from producer import broker, work_queue, work_exchange, retry_queue_1, dlx_exchange, dead_letter_queue, retry_queue_3, \
+    retry_queue_2
 
 
 @broker.subscriber(work_queue, exchange=work_exchange)
 async def process_work_message(body: str, msg: RabbitMessage):
     print(f"Message received: {body}")
-    retry_count = msg.headers.get("x-retry-count", 0)
+    retry_count = msg.headers.get("x-retry-count", 1)
     try:
         1 / 0
     except ZeroDivisionError:
-        if retry_count < 3:
+        if retry_count <= 3:
             await broker.publish(
                 message=body,
                 exchange="",
-                routing_key=retry_queue.name,
+                routing_key=f"retry_queue_{retry_count}",
                 headers={"x-retry-count": retry_count + 1}
             )
         else:
@@ -37,7 +38,9 @@ async def handle_dead_letter(body: str, msg: RabbitMessage):
 async def main():
     async with broker:
         print("Message wait")
-        await broker.declare_queue(retry_queue)
+        await broker.declare_queue(retry_queue_1)
+        await broker.declare_queue(retry_queue_2)
+        await broker.declare_queue(retry_queue_3)
         await broker.start()
 
 
